@@ -35,10 +35,16 @@ jobs:
           IMAGE_TAG=${{ github.event.client_payload.branch }}
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-app:$IMAGE_TAG
 
-      - name: Setup kubectl
+      - name: Update kubeconfig
         run: |
-          echo "${{ secrets.KUBECONFIG }}" > kubeconfig
-          export KUBECONFIG=$(pwd)/kubeconfig
+          aws eks update-kubeconfig --name ${{ github.event.client_payload.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
+          cat ~/.kube/config
+
+      - name: Update kubeconfig to custom path
+        run: |
+          mkdir -p ${{ github.workspace }}/kubeconfig
+          aws eks update-kubeconfig --name ${{ github.event.client_payload.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }} --kubeconfig ${{ github.workspace }}/kubeconfig/config
+          export KUBECONFIG=${{ github.workspace }}/kubeconfig/config
           kubectl version --client
 
       - name: Deploy to EKS using Helm
