@@ -33,7 +33,7 @@ jobs:
       - name: Build Docker image (ARM64)
         run: |
           IMAGE_TAG=${{ github.event.client_payload.branch }}
-          docker buildx build --platform linux/arm64 -t my-app:$IMAGE_TAG .
+          docker buildx build --platform linux/arm64 --load -t my-app:$IMAGE_TAG .
 
       - name: Push Docker image to ECR
         run: |
