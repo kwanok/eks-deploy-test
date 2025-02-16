@@ -35,6 +35,16 @@ jobs:
           IMAGE_TAG=${{ github.event.client_payload.branch }}
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-app:$IMAGE_TAG
 
+      - name: Download Helm Chart from S3 using AWS CLI
+        id: download_chart
+        run: |
+          CHART_S3_PATH="${{ github.event.client_payload.helm_chart_path }}"
+          echo "Downloading Helm Chart from S3: $CHART_S3_PATH"
+          aws s3 cp "$CHART_S3_PATH" .
+          CHART_FILE=$(basename "$CHART_S3_PATH")
+          echo "Downloaded helm chart file: $CHART_FILE"
+          echo "chart_file=$CHART_FILE" >> $GITHUB_OUTPUT
+
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig --name ${{ github.event.client_payload.eks_cluster_name }} --region ${{ secrets.AWS_REGION }}
@@ -50,7 +60,8 @@ jobs:
         env:
           IMAGE_TAG: ${{ github.event.client_payload.branch }}
         run: |
-          helm upgrade --install my-app ./helm-chart \
+          CHART_FILE="${{ steps.download_chart.outputs.chart_file }}"
+          helm upgrade --install my-app "./$CHART_FILE" \
             --set image.repository=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-app \
             --set image.tag=$IMAGE_TAG \
             --set branchPrefix=$IMAGE_TAG \
