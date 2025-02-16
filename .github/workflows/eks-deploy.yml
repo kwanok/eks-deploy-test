@@ -37,12 +37,12 @@ jobs:
 
       - name: Update kubeconfig
         run: |
-          aws eks update-kubeconfig --name ${{ github.event.client_payload.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
+          aws eks update-kubeconfig --name ${{ github.event.client_payload.eks_cluster_name }} --region ${{ secrets.AWS_REGION }}
 
       - name: Update kubeconfig to custom path
         run: |
           mkdir -p ${{ github.workspace }}/kubeconfig
-          aws eks update-kubeconfig --name ${{ github.event.client_payload.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }} --kubeconfig ${{ github.workspace }}/kubeconfig/config
+          aws eks update-kubeconfig --name ${{ github.event.client_payload.eks_cluster_name }} --region ${{ secrets.AWS_REGION }} --kubeconfig ${{ github.workspace }}/kubeconfig/config
           export KUBECONFIG=${{ github.workspace }}/kubeconfig/config
           kubectl version --client
 
