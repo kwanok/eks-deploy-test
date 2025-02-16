@@ -1,5 +1,5 @@
 # Use Debian-based minimal Python 3.13 image
-FROM python:3.13-slim-bookworm
+FROM --platform=linux/arm64 python:3.13-slim-bookworm
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
