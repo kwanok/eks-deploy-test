@@ -1,0 +1,52 @@
+name: Deploy to EKS
+
+on:
+  repository_dispatch:
+    types: [deploy]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.client_payload.branch }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Docker image
+        run: |
+          IMAGE_TAG=${{ github.event.client_payload.branch }}
+          docker build -t my-app:$IMAGE_TAG .
+          docker tag my-app:$IMAGE_TAG ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-app:$IMAGE_TAG
+
+      - name: Push Docker image to ECR
+        run: |
+          IMAGE_TAG=${{ github.event.client_payload.branch }}
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-app:$IMAGE_TAG
+
+      - name: Setup kubectl
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > kubeconfig
+          export KUBECONFIG=$(pwd)/kubeconfig
+          kubectl version --client
+
+      - name: Deploy to EKS using Helm
+        env:
+          IMAGE_TAG: ${{ github.event.client_payload.branch }}
+        run: |
+          helm upgrade --install my-app ./helm-chart \
+            --set image.repository=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-app \
+            --set image.tag=$IMAGE_TAG \
+            --set branchPrefix=$IMAGE_TAG \
+            --kubeconfig $(pwd)/kubeconfig
