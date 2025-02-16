@@ -54,4 +54,4 @@ jobs:
             --set image.repository=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-app \
             --set image.tag=$IMAGE_TAG \
             --set branchPrefix=$IMAGE_TAG \
-            --kubeconfig $(pwd)/kubeconfig
+            --kubeconfig $(pwd)/kubeconfig/config
